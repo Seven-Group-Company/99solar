@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { Card, TextField } from '@mui/material';
+import { Card } from '@mui/material';
 import { applyCommission } from '@/utils/commission';
 import { BidData, SavedReport } from '@/types/types';
 import { FileUploader } from '@/app/_components/report/FileUploader';
@@ -218,7 +218,7 @@ const saveReportToBackend = async () => {
 
 const loadReportData = (report: SavedReport) => {
   // Ensure commissionAmount is properly set when loading from DB
-  const reportDataWithCommission = report.report_data.map((item: any) => ({
+  const reportDataWithCommission = report.report_data.map((item: BidData) => ({
     ...item,
     commissionAmount: item.commissionAmount || 0
   }));

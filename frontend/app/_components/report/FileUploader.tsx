@@ -18,7 +18,6 @@ export const FileUploader = ({
   onFileChange,
   onClearFiles,
   onProcessFiles,
-  accept = '.xlsx,.xls,.csv'
 }: FileUploaderProps) => (
   <div>
     <div className="mb-6">

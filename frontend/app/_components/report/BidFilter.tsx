@@ -20,12 +20,13 @@ interface BidData {
 
 export const BidFilter = () => {
   const [files, setFiles] = useState<File[]>([]);
-  const [processing, setProcessing] = useState(false);
+//   const [processing, setProcessing] = useState(false);
   const [filterDate, setFilterDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
   const [filteredBids, setFilteredBids] = useState<BidData[]>([]);
   const [loading, setLoading] = useState(false);
+  const processing = loading;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -41,7 +42,7 @@ export const BidFilter = () => {
       reader.onload = (e) => {
         try {
           const data = e.target?.result;
-          let jsonData: any[];
+          let jsonData: Record<string, unknown>[];
           
           if (file.name.endsWith('.csv')) {
             // Parse CSV

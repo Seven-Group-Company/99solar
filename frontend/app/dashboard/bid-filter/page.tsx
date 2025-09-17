@@ -11,17 +11,6 @@ export default function BidFilterPage() {
     severity: 'success' as 'success' | 'error' | 'warning' | 'info',
   });
 
-  const showSnackbar = (
-    message: string, 
-    severity: 'success' | 'error' | 'warning' | 'info'
-  ) => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
-    });
-  };
-
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
