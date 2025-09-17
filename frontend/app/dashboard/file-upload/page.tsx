@@ -22,8 +22,6 @@ interface ProcessingError {
   error: string;
 }
 
-const BASE_URL = 'https://nine9solar.onrender.com'; 
-
 export default function FileManagementPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -68,7 +66,7 @@ export default function FileManagementPage() {
     files.forEach(file => formData.append('files', file));
 
     try {
-      const response = await axios.post(`${BASE_URL}/api/files/upload`, formData, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/files/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -81,7 +79,7 @@ export default function FileManagementPage() {
       const result = response.data;
       const updatedProcessedFiles = (result.processedFiles || []).map((file: ProcessedFile) => ({
         ...file,
-        downloadLink: `${BASE_URL}/api/files/downloads/${file.downloadLink}`, 
+        downloadLink: `${process.env.NEXT_PUBLIC_API_URL}/api/files/downloads/${file.downloadLink}`,
       }));
       setProcessedFiles(updatedProcessedFiles);
 

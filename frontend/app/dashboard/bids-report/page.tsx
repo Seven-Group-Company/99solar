@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { Card } from '@mui/material';
+import { Card, TextField } from '@mui/material';
 import { applyCommission } from '@/utils/commission';
 import { BidData, SavedReport } from '@/types/types';
 import { FileUploader } from '@/app/_components/report/FileUploader';
@@ -24,6 +24,7 @@ export default function BidReportGenerator() {
   const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [commissionAmount, setCommissionAmount] = useState(4); 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -60,6 +61,7 @@ export default function BidReportGenerator() {
               quantity: Number(row[5]) || 0,
               unitPrice: Number(row[6]) || 0,
               fileName: file.name,
+              commissionAmount: 0,
             }))
             .filter(item => item.unitPrice > 0);
           
@@ -74,14 +76,21 @@ export default function BidReportGenerator() {
     });
   }, []);
 
-  const handleApplyCommission = useCallback(() => {
-    setCommissionApplied(true);
-    setSnackbar({
-      open: true,
-      message: 'Commission of $4 subtracted from all bids',
-      severity: 'success'
-    });
-  }, []);
+const handleApplyCommission = useCallback(() => {
+  setResults(prevResults => 
+    prevResults.map(item => ({
+      ...item,
+      unitPrice: applyCommission(item.unitPrice, commissionAmount),
+      commissionAmount: commissionAmount // Add this line to update the commission amount
+    }))
+  );
+  setCommissionApplied(true);
+  setSnackbar({
+    open: true,
+    message: `Commission of $${commissionAmount} subtracted from all bids`,
+    severity: 'success'
+  });
+}, [commissionAmount]);
 
   const processFiles = async () => {
     if (files.length === 0) {
@@ -138,12 +147,10 @@ export default function BidReportGenerator() {
         'Description': item.description,
         'Disposition': item.disposition,
         'Quantity': item.quantity,
-        'Unit_Offer_Price': commissionApplied 
-          ? applyCommission(item.unitPrice) 
-          : item.unitPrice,
-        'Sales Customer': item.fileName,
-        // 'Commission Applied': commissionApplied ? 'Yes' : 'No'
-      }));
+      'Unit_Offer_Price': commissionApplied 
+        ? applyCommission(item.unitPrice, commissionAmount) 
+        : item.unitPrice,
+    }));
 
       const worksheet = XLSX.utils.json_to_sheet(reportData);
       const workbook = XLSX.utils.book_new();
@@ -162,22 +169,17 @@ export default function BidReportGenerator() {
     }
   };
 
-  const saveReportToBackend = async () => {
-    if (results.length === 0) {
-      showSnackbar('No data to save', 'warning');
-      return;
-    }
+const saveReportToBackend = async () => {
+  if (results.length === 0) {
+    showSnackbar('No data to save', 'warning');
+    return;
+  }
 
-    try {
-      const reportData = {
-        report_date: historyDate,
-        report_data: results.map(item => ({
-          ...item,
-          unitPrice: commissionApplied 
-            ? applyCommission(item.unitPrice) 
-            : item.unitPrice
-        }))
-      };
+  try {
+    const reportData = {
+      report_date: historyDate,
+      report_data: results // Use the current results state which should include commissionAmount
+    };
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const response = await fetch(`${apiUrl}/api/reports`, {
@@ -186,15 +188,15 @@ export default function BidReportGenerator() {
       body: JSON.stringify(reportData),
     });
 
-      if (!response.ok) throw new Error('Failed to save report');
+    if (!response.ok) throw new Error('Failed to save report');
 
-      showSnackbar('Report saved successfully!', 'success');
-      loadReportsFromBackend();
-    } catch (error) {
-      console.error('Save error:', error);
-      showSnackbar('Failed to save report', 'error');
-    }
-  };
+    showSnackbar('Report saved successfully!', 'success');
+    loadReportsFromBackend();
+  } catch (error) {
+    console.error('Save error:', error);
+    showSnackbar('Failed to save report', 'error');
+  }
+};
 
   const loadReportsFromBackend = useCallback(async () => {
     try {
@@ -214,14 +216,24 @@ export default function BidReportGenerator() {
     }
   }, [historyDate]);
 
-  const loadReportData = (report: SavedReport) => {
-    setResults(report.report_data);
-    setCommissionApplied(true);
-    showSnackbar(
-      `Report from ${new Date(report.created_at).toLocaleString()} loaded`,
-      'success'
-    );
-  };
+const loadReportData = (report: SavedReport) => {
+  // Ensure commissionAmount is properly set when loading from DB
+  const reportDataWithCommission = report.report_data.map((item: any) => ({
+    ...item,
+    commissionAmount: item.commissionAmount || 0
+  }));
+  
+  setResults(reportDataWithCommission);
+  
+  // Check if any commission was applied
+  const hasCommission = reportDataWithCommission.some(item => item.commissionAmount > 0);
+  setCommissionApplied(hasCommission);
+  
+  showSnackbar(
+    `Report from ${new Date(report.created_at).toLocaleString()} loaded`,
+    'success'
+  );
+};
 
   const showSnackbar = (
     message: string, 
@@ -256,12 +268,25 @@ export default function BidReportGenerator() {
           onClearFiles={() => setFiles([])}
           onProcessFiles={processFiles}
         />
+
+          {/* <div className="mt-4">
+          <TextField
+            label="Commission Amount ($)"
+            type="number"
+            value={commissionAmount}
+            onChange={(e) => setCommissionAmount(Number(e.target.value))}
+            variant="outlined"
+            size="small"
+          />
+        </div> */}
       </Card>
 
       {results.length > 0 && (
         <ResultsPreview 
           results={results}
           commissionApplied={commissionApplied}
+          commissionAmount={commissionAmount}
+          setCommissionAmount={setCommissionAmount}
           onApplyCommission={handleApplyCommission}
           onSaveReport={saveReportToBackend}
           onGenerateReport={generateReport}

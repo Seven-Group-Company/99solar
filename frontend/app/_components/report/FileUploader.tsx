@@ -9,6 +9,7 @@ interface FileUploaderProps {
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onClearFiles: () => void;
   onProcessFiles: () => void;
+  accept?: string;
 }
 
 export const FileUploader = ({
@@ -16,7 +17,8 @@ export const FileUploader = ({
   processing,
   onFileChange,
   onClearFiles,
-  onProcessFiles
+  onProcessFiles,
+  accept = '.xlsx,.xls,.csv'
 }: FileUploaderProps) => (
   <div>
     <div className="mb-6">
@@ -31,13 +33,13 @@ export const FileUploader = ({
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
             <p className="text-xs text-gray-500">
-              XLSX files only (multiple allowed)
+              files upload (multiple allowed)
             </p>
           </div>
           <input 
             type="file" 
             className="hidden"
-            accept=".xlsx,.xls"
+            accept=".xlsx,.xls,.csv"
             multiple
             onChange={onFileChange}
           />

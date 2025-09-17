@@ -7,6 +7,7 @@ export interface BidData {
   quantity: number;
   unitPrice: number;
   fileName: string;
+  commissionAmount?: number;
 }
 
 export interface SavedReport {
