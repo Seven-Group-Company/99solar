@@ -75,6 +75,9 @@ export default function Home() {
                 <span className="text-sm text-gray-700">
                   Welcome, {userRole}
                 </span>
+                <span className="hidden text-sm text-gray-700">
+                  User ID: {userId}
+                </span>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
