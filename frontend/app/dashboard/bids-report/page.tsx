@@ -141,7 +141,7 @@ const handleApplyCommission = useCallback(() => {
 
     try {
       const reportData = results.map(item => ({
-        'BidID': item.listingId,
+        'Listing Id': item.listingId,
         'OEM': item.oem,
         'SKU': item.sku,
         'Description': item.description,
@@ -150,6 +150,7 @@ const handleApplyCommission = useCallback(() => {
       'Unit_Offer_Price': commissionApplied 
         ? applyCommission(item.unitPrice, commissionAmount) 
         : item.unitPrice,
+      'Sales Customer': item.fileName,
     }));
 
       const worksheet = XLSX.utils.json_to_sheet(reportData);
