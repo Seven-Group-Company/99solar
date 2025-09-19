@@ -54,6 +54,7 @@ export default function LoginPage() {
 
       localStorage.setItem('isAuthenticated', JSON.stringify(true));
       localStorage.setItem('userId', data.user.id);
+      localStorage.setItem('name', data.user.name);
       localStorage.setItem('userRole', data.user.role);
 
 
@@ -69,7 +70,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -116,7 +117,7 @@ export default function LoginPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:outline-none bg-gray-50 focus:ring-2 focus:ring-indigo-300"
                     placeholder="your@email.com"
                     required
                   />
@@ -141,7 +142,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:outline-none bg-gray-50 focus:ring-2 focus:ring-indigo-300"
                     placeholder="••••••••"
                     required
                   />
@@ -201,27 +202,6 @@ export default function LoginPage() {
               </p>
             </motion.div>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="bg-gray-50 px-8 py-6 border-t border-gray-200"
-          >
-            <div className="text-center">
-              <p className="text-xs text-gray-500">
-                By signing in, you agree to our{' '}
-                <a href="#" className="font-medium text-gray-600 hover:text-gray-500">
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="#" className="font-medium text-gray-600 hover:text-gray-500">
-                  Privacy Policy
-                </a>
-                .
-              </p>
-            </div>
-          </motion.div>
         </motion.div>
       </motion.div>
     </div>

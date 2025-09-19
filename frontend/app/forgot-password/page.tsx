@@ -35,8 +35,8 @@ export default function ForgotPassword() {
     }
 
     return (
-        <div className="flex flex-col w-full h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden w-full max-w-md p-8">
+        <div className="flex flex-col w-full h-screen items-center justify-center p-4">
+            <div className="overflow-hidden w-full max-w-md p-8">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">Forgot Password</h1>
                     <p className="text-gray-600">Enter your email to reset your password</p>
@@ -50,7 +50,7 @@ export default function ForgotPassword() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:outline-none bg-gray-50 focus:ring-2 focus:ring-indigo-300"
                         />
                     </div>
                     {message && <p className="text-center text-green-500 mb-4">{message}</p>}

@@ -16,6 +16,12 @@ export default function DashboardPage() {
     { title: 'Monthly Revenue', value: '...', icon: DollarSign, change: '' },
   ]);
   const [fileName] = useState('example.xlsx'); // Set this dynamically as needed
+  
+  useEffect(() => {
+    if (!localStorage.getItem('isAuthenticated')) {
+      window.location.href = '/login';
+    }
+  }, []);
 
   useEffect(() => {
     Promise.all([

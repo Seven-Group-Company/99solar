@@ -6,33 +6,54 @@ import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-
 export default function Home() {
-    const router = useRouter();
+  const router = useRouter();
   const [revenue, setRevenue] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [userRole, setUserRole] = useState('');
 
   useEffect(() => {
+    // Check authentication status from localStorage
+    const authStatus = localStorage.getItem('isAuthenticated');
+    const storedUserId = localStorage.getItem('userId');
+    const storedUserRole = localStorage.getItem('name');
+    
+    setIsAuthenticated(authStatus === 'true');
+    setUserId(storedUserId || '');
+    setUserRole(storedUserRole || '');
+    
     fetchTotalRevenue().then(setRevenue).catch(console.error);
   }, []);
 
-    const LightningIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-  </svg>
-);
+  const LightningIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  );
 
-const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-);
+  const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  );
 
-const getStarted = () => {
-        localStorage.setItem('isAuthenticated', JSON.stringify(true));
-        localStorage.setItem('userId', '298546ec-4025-49fb-bbaf-0e82012a5652'); 
-        localStorage.setItem('userRole', 'admin');
-        router.push('/dashboard');
-    };
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
+  const handleDashboard = () => {
+    router.push('/dashboard');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
+    setIsAuthenticated(false);
+    setUserId('');
+    setUserRole('');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-primary-50">
@@ -48,15 +69,39 @@ const getStarted = () => {
             <LightningIcon className="h-8 w-8 text-primary-600" />
             <span className="ml-2 text-2xl font-bold text-primary-700">99Solar</span>
           </div>
-          <div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-primary-600 hover:bg-primary-700 text-black px-6 py-2 rounded-lg font-medium cursor-pointer"
-              onClick={getStarted}
-            >
-              Dashboard
-            </motion.button>
+          <div className="flex items-center space-x-4">
+            {isAuthenticated ? (
+              <>
+                <span className="text-sm text-gray-700">
+                  Welcome, {userRole}
+                </span>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-primary-600 hover:bg-primary-700 text-black px-6 py-2 rounded-lg font-medium cursor-pointer"
+                  onClick={handleDashboard}
+                >
+                  Dashboard
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium cursor-pointer"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </motion.button>
+              </>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-primary-600 hover:bg-primary-700 text-black px-6 py-2 rounded-lg font-medium cursor-pointer"
+                onClick={handleLogin}
+              >
+                Login
+              </motion.button>
+            )}
           </div>
         </div>
       </header>
@@ -75,18 +120,28 @@ const getStarted = () => {
                   Streamline Your <span className="text-primary-600">Bid Processing</span> Workflow
                 </h1>
                 <p className="mt-6 text-xl text-gray-600 max-w-2xl">
-                  Automate CSV to Excel conversions, bid aggregation, and invoice generation for your Amazon bid managemnt.
+                  Automate CSV to Excel conversions, bid aggregation, and invoice generation for your Amazon bid management.
                 </p>
                 <div className="mt-10 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-                  <div onClick={getStarted}>
+                  {isAuthenticated ? (
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className="border-2 cursor-pointer border-primary-600 text-primary-600 hover:bg-primary-50 px-8 py-4 rounded-lg font-medium text-lg"
+                      onClick={handleDashboard}
                     >
-                        Get Started
+                      Go to Dashboard
                     </motion.button>
-                  </div>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="border-2 cursor-pointer border-primary-600 text-primary-600 hover:bg-primary-50 px-8 py-4 rounded-lg font-medium text-lg"
+                      onClick={handleLogin}
+                    >
+                      Get Started
+                    </motion.button>
+                  )}
                 </div>
               </motion.div>
               
@@ -102,7 +157,7 @@ const getStarted = () => {
                     <div className="bg-green-100 p-2 rounded-full">
                       <CheckIcon className="h-5 w-5 text-green-600" />
                     </div>
-                          <div className="ml-3">
+                    <div className="ml-3">
                       <p className="font-medium">Bid processed!</p>
                       <p className="text-sm text-gray-500">
                          ${revenue.toLocaleString()} generated
@@ -114,7 +169,7 @@ const getStarted = () => {
             </div>
           </div>
         </section>
-        </main>
-      </div>
+      </main>
+    </div>
   );
 }

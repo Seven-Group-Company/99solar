@@ -47,7 +47,7 @@ const handleRegister = async (e: React.FormEvent) => {
 
   if (verificationSent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -86,7 +86,7 @@ const handleRegister = async (e: React.FormEvent) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -133,7 +133,7 @@ const handleRegister = async (e: React.FormEvent) => {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:outline-none bg-gray-50 focus:ring-2 focus:ring-indigo-300"
                     placeholder="Your Name"
                     required
                   />
@@ -158,7 +158,7 @@ const handleRegister = async (e: React.FormEvent) => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:outline-none bg-gray-50 focus:ring-2 focus:ring-indigo-300"
                     placeholder="your@email.com"
                     required
                   />
@@ -183,7 +183,7 @@ const handleRegister = async (e: React.FormEvent) => {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:outline-none bg-gray-50 focus:ring-2 focus:ring-indigo-300"
                     placeholder="••••••••"
                     required
                     minLength={8}
@@ -227,27 +227,6 @@ const handleRegister = async (e: React.FormEvent) => {
               </p>
             </motion.div>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.9 }}
-            className="bg-gray-50 px-8 py-6 border-t border-gray-200"
-          >
-            <div className="text-center">
-              <p className="text-xs text-gray-500">
-                By signing up, you agree to our{' '}
-                <a href="#" className="font-medium text-gray-600 hover:text-gray-500">
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="#" className="font-medium text-gray-600 hover:text-gray-500">
-                  Privacy Policy
-                </a>
-                .
-              </p>
-            </div>
-          </motion.div>
         </motion.div>
       </motion.div>
     </div>

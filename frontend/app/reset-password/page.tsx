@@ -97,7 +97,7 @@ function ResetPasswordContent() {
 
   if (!isTokenValid) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Invalid Reset Link</h1>
           <p className="text-gray-600 mb-6">
@@ -115,8 +115,8 @@ function ResetPasswordContent() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="w-full max-w-md p-8">
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Reset Your Password</h1>
         <p className="text-gray-600 mb-6">Please enter your new password below.</p>
 
@@ -133,7 +133,7 @@ function ResetPasswordContent() {
               placeholder="Enter new password"
               required
               minLength={8}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:outline-none bg-gray-50 focus:ring-2 focus:ring-indigo-300"
             />
             <p className="text-xs text-gray-500 mt-1">Must be at least 8 characters</p>
           </div>
@@ -151,7 +151,7 @@ function ResetPasswordContent() {
               placeholder="Confirm new password"
               required
               minLength={8}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="block w-full pl-10 pr-3 py-3 border border-gray-300 focus:outline-none bg-gray-50 focus:ring-2 focus:ring-indigo-300"
             />
           </div>
 
