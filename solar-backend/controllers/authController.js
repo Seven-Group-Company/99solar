@@ -224,6 +224,14 @@ exports.register = async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
         
+        // Validate input
+        if (!name || !email || !password) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'All fields are required' 
+            });
+        }
+        
         // Check if user already exists
         const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (userExists.rows.length > 0) {
@@ -243,17 +251,49 @@ exports.register = async (req, res) => {
             [name, email, hashedPassword, role, verificationCode, codeExpiresAt, false]
         );
 
-        // Send verification email
-        await sendVerificationEmail(email, verificationCode);
+        // Send verification email with timeout and error handling
+        try {
+            // Set a timeout for email sending (10 seconds)
+            await Promise.race([
+                sendVerificationEmail(email, verificationCode),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Email timeout')), 10000)
+                )
+            ]);
 
-        res.status(201).json({ 
-            success: true, 
-            message: 'Registration successful. Check your email for verification code.',
-            user: result.rows[0] 
-        });
+            res.status(201).json({ 
+                success: true, 
+                message: 'Registration successful. Check your email for verification code.',
+                user: {
+                    id: result.rows[0].id,
+                    name: result.rows[0].name,
+                    email: result.rows[0].email,
+                    role: result.rows[0].role
+                }
+            });
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError);
+            
+            // Still return success but inform about email issue
+            res.status(201).json({ 
+                success: true, 
+                message: 'Registration successful, but email could not be sent. Please request a new code.',
+                user: {
+                    id: result.rows[0].id,
+                    name: result.rows[0].name,
+                    email: result.rows[0].email,
+                    role: result.rows[0].role
+                },
+                emailWarning: true
+            });
+        }
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ success: false, error: 'Registration failed' });
+        res.status(500).json({ 
+            success: false, 
+            error: 'Registration failed',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
