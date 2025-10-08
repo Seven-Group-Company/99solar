@@ -193,7 +193,7 @@ export default function Awarding() {
     try {
       Object.entries(sourceFileReports).forEach(([sourceFile, data]) => {
         const formattedData = data.map(item => ({
-          'Listing ID': item.listingId,
+          'Listing Id': item.listingId,
           'OEM': item.oem,
           'SKU': item.sku,
           'Description': item.description,

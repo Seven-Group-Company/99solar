@@ -60,6 +60,7 @@ export default function BidReportGenerator() {
               disposition: String(row[4] || ''),
               quantity: Number(row[5]) || 0,
               unitPrice: Number(row[6]) || null,
+              originalUnitPrice: Number(row[6]) || null,
               fileName: file.name,
               commissionAmount: 0,
             }))
@@ -79,7 +80,7 @@ const handleApplyCommission = useCallback(() => {
   setResults(prevResults => 
     prevResults.map(item => ({
       ...item,
-      unitPrice: applyCommission(item.unitPrice ?? 0, commissionAmount),
+      unitPrice: applyCommission(item.originalUnitPrice ?? 0, commissionAmount),
       commissionAmount: commissionAmount // Add this line to update the commission amount
     }))
   );
@@ -147,8 +148,8 @@ const handleApplyCommission = useCallback(() => {
         'Disposition': item.disposition,
         'Quantity': item.quantity,
       'Unit_Offer_Price': commissionApplied 
-        ? applyCommission(item.unitPrice ?? 0, commissionAmount) 
-        : item.unitPrice,
+        ? applyCommission(item.originalUnitPrice ?? 0, commissionAmount) 
+        : item.originalUnitPrice,
       'Sales Customer': item.fileName,
     }));
 
@@ -220,7 +221,8 @@ const loadReportData = (report: SavedReport) => {
   // Ensure commissionAmount is properly set when loading from DB
   const reportDataWithCommission = report.report_data.map((item: BidData) => ({
     ...item,
-    commissionAmount: item.commissionAmount || 0
+    commissionAmount: item.commissionAmount || 0,
+    originalUnitPrice: item.originalUnitPrice ?? item.unitPrice // fallback to unitPrice if original not present
   }));
   
   setResults(reportDataWithCommission);

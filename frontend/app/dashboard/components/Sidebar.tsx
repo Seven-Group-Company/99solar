@@ -11,7 +11,7 @@ const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'File Management', href: '/dashboard/file-upload', icon: FileText },
   { name: 'Customer Bidding', href: '/dashboard/bids-report', icon: Users },
-  { name: 'Manage Commission', href: '/dashboard/bid-filter', icon: Filter },
+  { name: 'Verizon Awards', href: '/dashboard/bid-filter', icon: Filter },
   { name: 'Award Filter', href: '/dashboard/awarding', icon: Award },
   // { name: 'Verizon Submissions', href: '/dashboard/verizon-submissions', icon: Upload },
   // { name: 'Award Management', href: '/dashboard/award-management', icon: Award },
@@ -55,7 +55,7 @@ export function Sidebar() {
       <div className="hidden md:flex fixed h-full z-40">
         <div className="flex flex-col w-64 h-full border-r border-gray-200 bg-white">
           <div className="flex items-center h-16 px-4 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-900">99 Solar Bid Manager</h1>
+            <h1 className="text-xl font-bold text-gray-900">Bid Manager</h1>
           </div>
           <div className="flex flex-col flex-1 overflow-y-auto">
             <nav className="flex-1 px-2 py-4 space-y-1">

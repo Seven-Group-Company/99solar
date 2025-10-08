@@ -17,6 +17,7 @@ interface BidData {
   description: string;
   disposition: string;
   quantity: number;
+  originalUnitPrice?: number | null;
   unitPrice: number | null;
   commissionAmount?: number;
   fileName: string;
@@ -124,7 +125,7 @@ export const ResultsPreview = ({
       <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">{item.listingId}</td>
       <td className="px-4 py-3 text-sm text-gray-500">{item.oem}</td>
       <td className="px-4 py-3 text-sm font-medium text-green-600">
-        ${commissionApplied ? applyCommission(item.unitPrice ?? 0, commissionAmount) : item.unitPrice?.toFixed(2)}
+        ${commissionApplied ? applyCommission(item.originalUnitPrice ?? 0, commissionAmount) : item.originalUnitPrice?.toFixed(2)}
         {commissionApplied && <span className="ml-1 text-xs text-gray-500">(after commission)</span>}
       </td>
       <td className="px-4 py-3 text-sm text-red-600">

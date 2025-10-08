@@ -39,7 +39,7 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
   const exportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
       bids.map(bid => ({
-        'Listing ID': bid.listingId,
+        'Listing Id': bid.listingId,
         'OEM': bid.oem,
         'SKU': bid.sku,
         'Description': bid.description,
@@ -65,7 +65,7 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
 
   const exportToCSV = () => {
     const csvData = bids.map(bid => ({
-      'Listing ID': bid.listingId,
+      'Listing Id': bid.listingId,
       'OEM': bid.oem,
       'SKU': bid.sku,
       'Description': bid.description,
@@ -113,7 +113,7 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Listing ID
+                Listing Id
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 OEM
