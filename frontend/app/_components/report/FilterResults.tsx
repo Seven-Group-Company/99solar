@@ -1,4 +1,3 @@
-// app/_components/report/FilterResults.tsx
 'use client';
 
 import { useState } from 'react';
@@ -15,7 +14,7 @@ interface BidData {
   quantity: number;
   unitPrice: number;
   fileName: string;
-  commissionAmount?: number;
+  commissionAmount?: number | null;
 }
 
 interface FilterResultsProps {
@@ -46,7 +45,7 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
         'Disposition': bid.disposition,
         'Quantity': bid.quantity,
         'Unit Awarded Price': bid.commissionAmount
-          ? bid.unitPrice + (bid.commissionAmount || 0)
+          ? bid.unitPrice + (bid.commissionAmount ?? null)
           : bid.unitPrice,
         'File Name': bid.fileName,
       }))
@@ -71,9 +70,10 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
       'Description': bid.description,
       'Disposition': bid.disposition,
       'Quantity': bid.quantity,
-      'Unit Awarded Price': bid.commissionAmount
-        ? bid.unitPrice + (bid.commissionAmount || 0)
-        : bid.unitPrice,
+'Unit Awarded Price':
+  typeof bid.unitPrice === 'number' && typeof bid.commissionAmount === 'number'
+    ? bid.unitPrice + bid.commissionAmount
+    : null,
       'File Name': bid.fileName,
     }));
 
@@ -91,13 +91,13 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
         </h2>
         
         <div className="flex gap-2">
-          <Button
+          {/* <Button
             variant="contained"
             color="success"
             onClick={exportToExcel}
           >
             Export to Excel
-          </Button>
+          </Button> */}
           <Button
             variant="outlined"
             color="primary"
@@ -139,21 +139,26 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
             {bids
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((bid, index) => {
-                const finalPrice = bid.unitPrice + (bid.commissionAmount || 0);
-                
+                // Only calculate finalPrice if unitPrice is a number
+                const hasPrice = typeof bid.unitPrice === 'number' && !isNaN(bid.unitPrice);
+                const hasCommission = typeof bid.commissionAmount === 'number' && hasPrice;
+                const finalPrice = hasPrice && hasCommission
+                  ? bid.unitPrice + (bid.commissionAmount ?? 0)
+                  : null;
+          
                 return (
                   <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-4 py-3 text-sm text-gray-900">{bid.listingId}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{bid.oem}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{bid.description}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">
-                      {typeof bid.unitPrice === 'number' ? `$${bid.unitPrice.toFixed(2)}` : ''}
+                      {hasPrice ? `$${bid.unitPrice.toFixed(2)}` : ''}
                     </td>
                     <td className="px-4 py-3 text-sm text-red-600">
-                      {typeof bid.commissionAmount === 'number' ? `$${bid.commissionAmount.toFixed(2)}` : '$0.00'}
+                      {hasCommission ? `$${bid.commissionAmount!.toFixed(2)}` : ''}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-green-600">
-                      {typeof finalPrice === 'number' && !isNaN(finalPrice) ? `$${finalPrice.toFixed(2)}` : ''}
+                      {finalPrice !== null ? `$${finalPrice.toFixed(2)}` : ''}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">{bid.quantity}</td>
                   </tr>
