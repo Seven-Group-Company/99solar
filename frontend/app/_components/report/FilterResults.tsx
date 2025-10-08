@@ -35,32 +35,32 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
     setPage(0);
   };
 
-  const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      bids.map(bid => ({
-        'Listing Id': bid.listingId,
-        'OEM': bid.oem,
-        'SKU': bid.sku,
-        'Description': bid.description,
-        'Disposition': bid.disposition,
-        'Quantity': bid.quantity,
-        'Unit Awarded Price': bid.commissionAmount
-          ? bid.unitPrice + (bid.commissionAmount ?? null)
-          : bid.unitPrice,
-        'File Name': bid.fileName,
-      }))
-    );
+  // const exportToExcel = () => {
+  //   const worksheet = XLSX.utils.json_to_sheet(
+  //     bids.map(bid => ({
+  //       'Listing Id': bid.listingId,
+  //       'OEM': bid.oem,
+  //       'SKU': bid.sku,
+  //       'Description': bid.description,
+  //       'Disposition': bid.disposition,
+  //       'Quantity': bid.quantity,
+  //       'Unit Awarded Price': bid.commissionAmount
+  //         ? bid.unitPrice + (bid.commissionAmount ?? null)
+  //         : bid.unitPrice,
+  //       'File Name': bid.fileName,
+  //     }))
+  //   );
     
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Filtered Bids');
+  //   const workbook = XLSX.utils.book_new();
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, 'Filtered Bids');
     
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-    });
+  //   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  //   const blob = new Blob([excelBuffer], { 
+  //     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  //   });
     
-    saveAs(blob, `Filtered_Bids_${date}.xlsx`);
-  };
+  //   saveAs(blob, `Filtered_Bids_${date}.xlsx`);
+  // };
 
   const exportToCSV = () => {
     const csvData = bids.map(bid => ({
