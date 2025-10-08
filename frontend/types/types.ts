@@ -5,7 +5,7 @@ export interface BidData {
   description: string;
   disposition: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number | null;
   fileName: string;
   commissionAmount?: number;
 }

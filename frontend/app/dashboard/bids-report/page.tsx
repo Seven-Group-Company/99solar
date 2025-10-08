@@ -59,11 +59,10 @@ export default function BidReportGenerator() {
               description: String(row[3] || ''),
               disposition: String(row[4] || ''),
               quantity: Number(row[5]) || 0,
-              unitPrice: Number(row[6]) || 0,
+              unitPrice: Number(row[6]) || null,
               fileName: file.name,
               commissionAmount: 0,
             }))
-            .filter(item => item.unitPrice > 0);
           
           resolve(parsedData);
         } catch (error) {
@@ -80,7 +79,7 @@ const handleApplyCommission = useCallback(() => {
   setResults(prevResults => 
     prevResults.map(item => ({
       ...item,
-      unitPrice: applyCommission(item.unitPrice, commissionAmount),
+      unitPrice: applyCommission(item.unitPrice ?? 0, commissionAmount),
       commissionAmount: commissionAmount // Add this line to update the commission amount
     }))
   );
@@ -106,8 +105,8 @@ const handleApplyCommission = useCallback(() => {
       
       const aggregated = combinedData.reduce((acc: Record<string, BidData>, item) => {
         const existing = acc[item.listingId];
-        
-        if (!existing || item.unitPrice > existing.unitPrice) {
+
+        if (!existing || (item.unitPrice ?? 0) > (existing.unitPrice ?? 0)) {
           acc[item.listingId] = item;
         }
         
@@ -148,7 +147,7 @@ const handleApplyCommission = useCallback(() => {
         'Disposition': item.disposition,
         'Quantity': item.quantity,
       'Unit_Offer_Price': commissionApplied 
-        ? applyCommission(item.unitPrice, commissionAmount) 
+        ? applyCommission(item.unitPrice ?? 0, commissionAmount) 
         : item.unitPrice,
       'Sales Customer': item.fileName,
     }));
