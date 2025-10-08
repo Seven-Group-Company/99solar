@@ -146,12 +146,14 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
                     <td className="px-4 py-3 text-sm text-gray-900">{bid.listingId}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{bid.oem}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{bid.description}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">${bid.unitPrice.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">
+                      {typeof bid.unitPrice === 'number' ? `$${bid.unitPrice.toFixed(2)}` : ''}
+                    </td>
                     <td className="px-4 py-3 text-sm text-red-600">
-                      ${(bid.commissionAmount || 0).toFixed(2)}
+                      {typeof bid.commissionAmount === 'number' ? `$${bid.commissionAmount.toFixed(2)}` : '$0.00'}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-green-600">
-                      ${finalPrice.toFixed(2)}
+                      {typeof finalPrice === 'number' && !isNaN(finalPrice) ? `$${finalPrice.toFixed(2)}` : ''}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">{bid.quantity}</td>
                   </tr>
