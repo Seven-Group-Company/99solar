@@ -44,15 +44,16 @@ export const BidFilter = () => {
 reader.onload = (e) => {
   try {
     const data = e.target?.result;
-    let jsonData: Record<string, unknown>[]; // <-- use let
 
     const workbook = file.name.endsWith('.csv')
       ? XLSX.read(data as string, { type: 'string' })
       : XLSX.read(data as ArrayBuffer, { type: 'array' });
-
+    
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const jsonData: Record<string, unknown>[] = XLSX.utils.sheet_to_json(worksheet);
+
+    // ...rest of your code...
 
 
           // Extract valid listing IDs
