@@ -86,7 +86,6 @@ if (file.name.endsWith('.csv')) {
     setLoading(true);
 
     try {
-      // Extract listing IDs from all uploaded files
       const allListingIds = await Promise.all(files.map(parseFile));
       const listingIds = Array.from(new Set(allListingIds.flat()));
 
@@ -99,7 +98,6 @@ if (file.name.endsWith('.csv')) {
       if (!response.ok) throw new Error('Failed to filter bids');
       const data = await response.json();
 
-      // Remove duplicate bids with same listingId for the same date
       const uniqueBids = Array.from(
         new Map(
           (data.bids as BidData[]).map(bid => [`${bid.listingId}_${filterDate}`, bid])
