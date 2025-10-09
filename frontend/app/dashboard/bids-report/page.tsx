@@ -24,7 +24,14 @@ export default function BidReportGenerator() {
   const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [commissionAmount, setCommissionAmount] = useState(4); 
+  const [commissionAmount, setCommissionAmount] = useState(4);
+
+  const showSnackbar = (
+    message: string,
+    severity: 'success' | 'error' | 'warning' | 'info'
+  ) => setSnackbar({ open: true, message, severity });
+
+  const handleCloseSnackbar = () => setSnackbar(prev => ({ ...prev, open: false }));
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -37,21 +44,21 @@ export default function BidReportGenerator() {
   const parseExcel = useCallback(async (file: File): Promise<BidData[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
         try {
           const data = e.target?.result as ArrayBuffer;
           const workbook = XLSX.read(data, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
-          
-          const jsonData: (string | number | undefined)[][] = XLSX.utils.sheet_to_json(worksheet, { 
-            header: 1, 
-            range: 1 
+
+          const jsonData: (string | number | undefined)[][] = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            range: 1
           });
-          
+
           const parsedData: BidData[] = jsonData
-            .filter(row => row.length >= 7)
+            .filter(row => row.length >= 7 && row[6] != null && !isNaN(Number(row[6])))
             .map(row => ({
               listingId: String(row[0]),
               oem: String(row[1] || ''),
@@ -63,34 +70,30 @@ export default function BidReportGenerator() {
               originalUnitPrice: Number(row[6]) || null,
               fileName: file.name,
               commissionAmount: 0,
-            }))
-          
+            }));
+
           resolve(parsedData);
         } catch (error) {
           reject(error);
         }
       };
-      
+
       reader.onerror = () => reject(new Error('File reading failed'));
       reader.readAsArrayBuffer(file);
     });
   }, []);
 
-const handleApplyCommission = useCallback(() => {
-  setResults(prevResults => 
-    prevResults.map(item => ({
-      ...item,
-      unitPrice: applyCommission(item.originalUnitPrice ?? 0, commissionAmount),
-      commissionAmount: commissionAmount // Add this line to update the commission amount
-    }))
-  );
-  setCommissionApplied(true);
-  setSnackbar({
-    open: true,
-    message: `Commission of $${commissionAmount} subtracted from all bids`,
-    severity: 'success'
-  });
-}, [commissionAmount]);
+  const handleApplyCommission = useCallback(() => {
+    setResults(prevResults =>
+      prevResults.map(item => ({
+        ...item,
+        unitPrice: applyCommission(item.originalUnitPrice ?? 0, commissionAmount),
+        commissionAmount: commissionAmount,
+      }))
+    );
+    setCommissionApplied(true);
+    showSnackbar(`Commission of $${commissionAmount} subtracted from all bids`, 'success');
+  }, [commissionAmount]);
 
   const processFiles = async () => {
     if (files.length === 0) {
@@ -99,35 +102,25 @@ const handleApplyCommission = useCallback(() => {
     }
 
     setProcessing(true);
-    
     try {
       const allData = await Promise.all(files.map(parseExcel));
       const combinedData = allData.flat();
-      
+
       const aggregated = combinedData.reduce((acc: Record<string, BidData>, item) => {
         const existing = acc[item.listingId];
-
         if (!existing || (item.unitPrice ?? 0) > (existing.unitPrice ?? 0)) {
           acc[item.listingId] = item;
         }
-        
         return acc;
       }, {});
-      
+
       const highestBids = Object.values(aggregated);
       setResults(highestBids);
       setCommissionApplied(false);
-      
-      showSnackbar(
-        `Processed ${files.length} files. Found ${highestBids.length} highest bids.`,
-        'success'
-      );
+      showSnackbar(`Processed ${files.length} files. Found ${highestBids.length} highest bids.`, 'success');
     } catch (error) {
       console.error('Processing error:', error);
-      showSnackbar(
-        'Failed to process files. Please check file formats.',
-        'error'
-      );
+      showSnackbar('Failed to process files. Please check file formats.', 'error');
     } finally {
       setProcessing(false);
     }
@@ -147,66 +140,62 @@ const handleApplyCommission = useCallback(() => {
         'Description': item.description,
         'Disposition': item.disposition,
         'Quantity': item.quantity,
-      'Unit_Offer_Price': commissionApplied 
-        ? applyCommission(item.originalUnitPrice ?? 0, commissionAmount) 
-        : item.originalUnitPrice,
-      'Sales Customer': item.fileName,
-    }));
+        'Unit_Offer_Price': commissionApplied
+          ? applyCommission(item.originalUnitPrice ?? 0, commissionAmount)
+          : item.originalUnitPrice,
+        'Sales Customer': item.fileName,
+      }));
 
       const worksheet = XLSX.utils.json_to_sheet(reportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Highest Bids');
-      
+
       const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([excelBuffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      const blob = new Blob([excelBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
-      
+
       saveAs(blob, `Highest_Bids_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      
     } catch (error) {
       console.error('Report generation error:', error);
       showSnackbar('Failed to generate report', 'error');
     }
   };
 
-const saveReportToBackend = async () => {
-  if (results.length === 0) {
-    showSnackbar('No data to save', 'warning');
-    return;
-  }
+  const saveReportToBackend = async () => {
+    if (results.length === 0) {
+      showSnackbar('No data to save', 'warning');
+      return;
+    }
 
-  try {
-    const reportData = {
-      report_date: historyDate,
-      report_data: results // Use the current results state which should include commissionAmount
-    };
+    try {
+      const reportData = {
+        report_date: historyDate,
+        report_data: results,
+      };
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    const response = await fetch(`${apiUrl}/api/reports`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(reportData),
-    });
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reportData),
+      });
 
-    if (!response.ok) throw new Error('Failed to save report');
-
-    showSnackbar('Report saved successfully!', 'success');
-    loadReportsFromBackend();
-  } catch (error) {
-    console.error('Save error:', error);
-    showSnackbar('Failed to save report', 'error');
-  }
-};
+      if (!response.ok) throw new Error('Failed to save report');
+      showSnackbar('Report saved successfully!', 'success');
+      loadReportsFromBackend();
+    } catch (error) {
+      console.error('Save error:', error);
+      showSnackbar('Failed to save report', 'error');
+    }
+  };
 
   const loadReportsFromBackend = useCallback(async () => {
     try {
       setLoadingHistory(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/reports?date=${historyDate}`);
-
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/reports/${historyDate}`);
       if (!response.ok) throw new Error('Failed to load reports');
-      
       const data = await response.json();
       setSavedReports(data);
     } catch (error) {
@@ -217,74 +206,64 @@ const saveReportToBackend = async () => {
     }
   }, [historyDate]);
 
-const loadReportData = (report: SavedReport) => {
-  // Ensure commissionAmount is properly set when loading from DB
-  const reportDataWithCommission = report.report_data.map((item: BidData) => ({
-    ...item,
-    commissionAmount: item.commissionAmount || 0,
-    originalUnitPrice: item.originalUnitPrice ?? item.unitPrice // fallback to unitPrice if original not present
-  }));
-  
-  setResults(reportDataWithCommission);
-  
-  // Check if any commission was applied
-  const hasCommission = reportDataWithCommission.some(item => item.commissionAmount > 0);
-  setCommissionApplied(hasCommission);
-  
-  showSnackbar(
-    `Report from ${new Date(report.created_at).toLocaleString()} loaded`,
-    'success'
-  );
-};
+  const handleLoadAllReports = (reports: SavedReport[]) => {
+    if (reports.length === 0) {
+      showSnackbar('No reports found to load', 'warning');
+      return;
+    }
 
-  const showSnackbar = (
-    message: string, 
-    severity: 'success' | 'error' | 'warning' | 'info'
-  ) => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
-    });
+    const mergedData = reports.flatMap(r => r.report_data);
+    setResults(mergedData);
+    setCommissionApplied(mergedData.some(i => (i.commissionAmount ?? 0) > 0));
+    showSnackbar(`Loaded all ${mergedData.length} bids from ${reports.length} reports`, 'success');
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
+  const loadReportData = (report: SavedReport) => {
+    const reportDataWithCommission = report.report_data.map((item: BidData) => ({
+      ...item,
+      commissionAmount: item.commissionAmount || 0,
+      originalUnitPrice: item.originalUnitPrice ?? item.unitPrice,
+    }));
+
+    setResults(reportDataWithCommission);
+    setCommissionApplied(reportDataWithCommission.some(item => item.commissionAmount > 0));
+    showSnackbar(`Report from ${new Date(report.created_at).toLocaleString()} loaded`, 'success');
+  };
+
+  const handleDeleteReport = async (reportId: number) => {
+    if (!confirm('Are you sure you want to delete this report?')) return;
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${apiUrl}/api/reports/${reportId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete report');
+      showSnackbar('Report deleted successfully', 'success');
+      loadReportsFromBackend();
+    } catch (err) {
+      console.error(err);
+      showSnackbar('Failed to delete report', 'error');
+    }
   };
 
   useEffect(() => {
-    if (historyDate) {
-      loadReportsFromBackend();
-    }
+    if (historyDate) loadReportsFromBackend();
   }, [historyDate, loadReportsFromBackend]);
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Bid Report Generator</h1>
-      
+
       <Card className="p-6 mb-6 shadow-lg">
-        <FileUploader 
+        <FileUploader
           files={files}
           processing={processing}
           onFileChange={handleFileChange}
           onClearFiles={() => setFiles([])}
           onProcessFiles={processFiles}
         />
-
-          {/* <div className="mt-4">
-          <TextField
-            label="Commission Amount ($)"
-            type="number"
-            value={commissionAmount}
-            onChange={(e) => setCommissionAmount(Number(e.target.value))}
-            variant="outlined"
-            size="small"
-          />
-        </div> */}
       </Card>
 
       {results.length > 0 && (
-        <ResultsPreview 
+        <ResultsPreview
           results={results}
           commissionApplied={commissionApplied}
           commissionAmount={commissionAmount}
@@ -296,16 +275,18 @@ const loadReportData = (report: SavedReport) => {
         />
       )}
 
-      <ReportHistory 
+      <ReportHistory
         historyDate={historyDate}
         savedReports={savedReports}
         loadingHistory={loadingHistory}
         onDateChange={setHistoryDate}
         onRefresh={loadReportsFromBackend}
         onLoadReport={loadReportData}
+        onDelete={handleDeleteReport}
+        onLoadAll={handleLoadAllReports}
       />
 
-      <SnackbarAlert 
+      <SnackbarAlert
         open={snackbar.open}
         message={snackbar.message}
         severity={snackbar.severity}

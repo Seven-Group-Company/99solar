@@ -82,6 +82,36 @@ router.get('/latest', async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM reports WHERE id = $1', [id]);
+    if (result.rowCount === 0)
+      return res.status(404).json({ error: 'Report not found' });
+    res.json({ message: 'Report deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting report:', error);
+    res.status(500).json({ error: 'Failed to delete report' });
+  }
+});
+
+router.get('/:report_date', async (req, res) => {
+  try {
+    const { report_date } = req.params;
+    const result = await pool.query(
+      `SELECT * FROM reports WHERE report_date = $1 ORDER BY created_at DESC`,
+      [report_date]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    res.status(500).json({ error: 'Failed to fetch reports' });
+  }
+});
+
+
+
 router.get('/', async (req, res) => {
   try {
     const { date } = req.query;

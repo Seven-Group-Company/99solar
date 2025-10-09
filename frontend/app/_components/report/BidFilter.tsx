@@ -41,22 +41,18 @@ export const BidFilter = () => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
-reader.onload = (e) => {
-  try {
-    const data = e.target?.result;
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
 
-    const workbook = file.name.endsWith('.csv')
-      ? XLSX.read(data as string, { type: 'string' })
-      : XLSX.read(data as ArrayBuffer, { type: 'array' });
-    
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const jsonData: Record<string, unknown>[] = XLSX.utils.sheet_to_json(worksheet);
+          const workbook = file.name.endsWith('.csv')
+            ? XLSX.read(data as string, { type: 'string' })
+            : XLSX.read(data as ArrayBuffer, { type: 'array' });
+          
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData: Record<string, unknown>[] = XLSX.utils.sheet_to_json(worksheet);
 
-    // ...rest of your code...
-
-
-          // Extract valid listing IDs
           const listingIds = Array.from(
             new Set(
               jsonData
