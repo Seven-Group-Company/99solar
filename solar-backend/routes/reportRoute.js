@@ -95,23 +95,6 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-router.get('/:report_date', async (req, res) => {
-  try {
-    const { report_date } = req.params;
-    const result = await pool.query(
-      `SELECT * FROM reports WHERE report_date = $1 ORDER BY created_at DESC`,
-      [report_date]
-    );
-
-    res.status(200).json(result.rows);
-  } catch (error) {
-    console.error('Error fetching reports:', error);
-    res.status(500).json({ error: 'Failed to fetch reports' });
-  }
-});
-
-
-
 router.get('/', async (req, res) => {
   try {
     const { date } = req.query;
@@ -316,5 +299,21 @@ router.get('/recent-activities', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch recent activities' });
   }
 });
+
+router.get('/:report_date', async (req, res) => {
+  try {
+    const { report_date } = req.params;
+    const result = await pool.query(
+      `SELECT * FROM reports WHERE report_date = $1 ORDER BY created_at DESC`,
+      [report_date]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    res.status(500).json({ error: 'Failed to fetch reports' });
+  }
+});
+
 
 module.exports = router;
