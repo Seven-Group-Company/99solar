@@ -92,89 +92,97 @@ export default function Awarding() {
     }
   }, [historyDate, showSnackbar]);
 
-  // Process awarded CSV files
   const processAwardedFiles = useCallback(async () => {
-    if (files.length === 0) {
-      showSnackbar('Please select at least one awarded CSV file', 'warning');
-      return;
+  if (files.length === 0) {
+    showSnackbar('Please select at least one awarded CSV file', 'warning');
+    return;
+  }
+
+  if (savedReports.length === 0) {
+    showSnackbar('No saved reports found. Load reports first.', 'warning');
+    return;
+  }
+
+  setProcessing(true);
+
+  try {
+    const awardedDataMap: Record<string, AwardedBid> = {};
+    for (const file of files) {
+      const awardedItems = await parseCSV(file);
+      awardedItems.forEach((item: Record<string, unknown>) => {
+        const listingId = String(item['Listing Id']);
+        awardedDataMap[listingId] = {
+          listingId,
+          oem: String(item['OEM'] || ''),
+          sku: String(item['SKU'] || ''),
+          prop65Warning: String(item['Prop65 Warning'] || ''),
+          description: String(item['Description'] || ''),
+          disposition: String(item['Disposition'] || ''),
+          quantity: Number(item['Quantity']) || 0,
+          unitAwardedPrice: Number(item['Unit Awarded Price']) || 0,
+          fileName: file.name,
+        };
+      });
     }
 
-    if (savedReports.length === 0) {
-      showSnackbar('No saved reports found. Load reports first.', 'warning');
-      return;
-    }
+    const sourceFileData: Record<string, AwardedBid[]> = {};
+    const internalBids: AwardedBid[] = [];
 
-    setProcessing(true);
-    
-    try {
-      // Process all files and create a map of awarded data
-      const awardedDataMap: Record<string, AwardedBid> = {};
-      for (const file of files) {
-        const awardedItems = await parseCSV(file);
-        awardedItems.forEach((item: Record<string, unknown>) => {
-          const listingId = String(item['Listing Id']);
-          awardedDataMap[listingId] = {
-            listingId,
-            oem: String(item['OEM'] || ''),
-            sku: String(item['SKU'] || ''),
-            prop65Warning: String(item['Prop65 Warning'] || ''),
-            description: String(item['Description'] || ''),
-            disposition: String(item['Disposition'] || ''),
-            quantity: Number(item['Quantity']) || 0,
-            unitAwardedPrice: Number(item['Unit Awarded Price']) || 0,
-            fileName: file.name
-          };
-        });
-      }
-      
-      // Create a map to group by source file
-      const sourceFileData: Record<string, AwardedBid[]> = {};
-      
-      // Process all saved reports
-// Only keep bids that also exist in the uploaded awarded CSVs
-savedReports.forEach(report => {
-  // Filter only those bids whose listingId exists in the awardedDataMap
-  const filteredData = report.report_data.filter(item => awardedDataMap[item.listingId]);
+    // Compare saved reports with awarded data
+    savedReports.forEach(report => {
+      report.report_data.forEach(item => {
+        const awardedItem = awardedDataMap[item.listingId];
+        if (awardedItem) {
+          const sourceFile = item.fileName;
+          if (!sourceFileData[sourceFile]) sourceFileData[sourceFile] = [];
 
-  filteredData.forEach(item => {
-    const awardedItem = awardedDataMap[item.listingId];
-    const sourceFile = item.fileName;
-
-    if (!sourceFileData[sourceFile]) {
-      sourceFileData[sourceFile] = [];
-    }
-
-    sourceFileData[sourceFile].push({
-      listingId: item.listingId,
-      oem: item.oem,
-      sku: item.sku,
-      prop65Warning: awardedItem.prop65Warning ?? '',
-      description: item.description,
-      disposition: item.disposition,
-      quantity: item.quantity,
-      unitAwardedPrice: awardedItem.unitAwardedPrice,
-      fileName: item.fileName
+          sourceFileData[sourceFile].push({
+            listingId: item.listingId,
+            oem: item.oem,
+            sku: item.sku,
+            prop65Warning: awardedItem.prop65Warning ?? '',
+            description: item.description,
+            disposition: item.disposition,
+            quantity: item.quantity,
+            unitAwardedPrice: awardedItem.unitAwardedPrice,
+            fileName: item.fileName,
+          });
+        } else {
+          // Not matched = internal
+          internalBids.push({
+            listingId: item.listingId,
+            oem: item.oem,
+            sku: item.sku,
+            prop65Warning: '',
+            description: item.description,
+            disposition: item.disposition,
+            quantity: item.quantity,
+            unitAwardedPrice: 0,
+            fileName: item.fileName,
+          });
+        }
+      });
     });
-  });
-});
 
-      
-      setSourceFileReports(sourceFileData);
-      
-      showSnackbar(
-        `Processed ${files.length} files. Found ${Object.keys(sourceFileData).length} source files with matching bids.`,
-        'success'
-      );
-    } catch (error) {
-      console.error('Processing error:', error);
-      showSnackbar(
-        'Failed to process files. Please check file formats.',
-        'error'
-      );
-    } finally {
-      setProcessing(false);
+    // ✅ Add internal bids under a special key
+    if (internalBids.length > 0) {
+      sourceFileData['Internal'] = internalBids;
     }
-  }, [files, savedReports, showSnackbar]);
+
+    setSourceFileReports(sourceFileData);
+
+    showSnackbar(
+      `Processed ${files.length} files. Found ${Object.keys(sourceFileData).length - 1} matched sources and ${internalBids.length} internal bids.`,
+      'success'
+    );
+  } catch (error) {
+    console.error('Processing error:', error);
+    showSnackbar('Failed to process files. Please check file formats.', 'error');
+  } finally {
+    setProcessing(false);
+  }
+}, [files, savedReports, showSnackbar]);
+
 
   const generateSourceFileReports = useCallback(() => {
     if (Object.keys(sourceFileReports).length === 0) {
