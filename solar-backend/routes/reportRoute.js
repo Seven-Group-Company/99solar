@@ -9,11 +9,50 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'report_date and report_data are required' });
     }
 
+    // Remove duplicates within the same payload
+    const uniqueDataMap = new Map();
+    report_data.forEach(bid => {
+      if (bid.listingId) {
+        const key = `${bid.listingId}_${report_date}`;
+        if (!uniqueDataMap.has(key)) uniqueDataMap.set(key, bid);
+      }
+    });
+    const uniqueReportData = Array.from(uniqueDataMap.values());
+
+    // Get existing listingIds for that date
+    const existing = await pool.query(
+      `SELECT report_data FROM reports WHERE report_date = $1`,
+      [report_date]
+    );
+
+    const existingIds = new Set();
+    existing.rows.forEach(row => {
+      let data = row.report_data;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch { data = []; }
+      }
+      if (Array.isArray(data)) {
+        data.forEach(bid => {
+          if (bid.listingId) existingIds.add(String(bid.listingId));
+        });
+      }
+    });
+
+    // Filter out any bids that already exist for same listingId and date
+    const newUniqueData = uniqueReportData.filter(
+      bid => !existingIds.has(String(bid.listingId))
+    );
+
+    if (newUniqueData.length === 0) {
+      return res.status(200).json({ message: 'No new records to save (duplicates skipped).' });
+    }
+
+    // Save only new unique bids
     const result = await pool.query(
       `INSERT INTO reports (report_date, report_data, created_at)
        VALUES ($1, $2, NOW())
        RETURNING *`,
-      [report_date, JSON.stringify(report_data)]
+      [report_date, JSON.stringify(newUniqueData)]
     );
 
     res.status(201).json(result.rows[0]);
@@ -22,6 +61,7 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'Failed to save report' });
   }
 });
+
 
 router.get('/latest', async (req, res) => {
     const { date } = req.query;

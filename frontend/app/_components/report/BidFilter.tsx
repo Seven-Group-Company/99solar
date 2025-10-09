@@ -20,65 +20,58 @@ interface BidData {
 
 export const BidFilter = () => {
   const [files, setFiles] = useState<File[]>([]);
-//   const [processing, setProcessing] = useState(false);
   const [filterDate, setFilterDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
   const [filteredBids, setFilteredBids] = useState<BidData[]>([]);
   const [loading, setLoading] = useState(false);
-  const processing = loading;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setFiles(prev => [...prev, ...newFiles]);
+      // Avoid duplicate files by name
+      const uniqueFiles = newFiles.filter(
+        file => !files.some(f => f.name === file.name)
+      );
+      setFiles(prev => [...prev, ...uniqueFiles]);
     }
   };
 
   const parseFile = async (file: File): Promise<string[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
         try {
           const data = e.target?.result;
           let jsonData: Record<string, unknown>[];
-          
-          if (file.name.endsWith('.csv')) {
-            // Parse CSV
-            const csvData = data as string;
-            const workbook = XLSX.read(csvData, { type: 'string' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            jsonData = XLSX.utils.sheet_to_json(worksheet);
-          } else {
-            // Parse XLSX
-            const arrayBuffer = data as ArrayBuffer;
-            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            jsonData = XLSX.utils.sheet_to_json(worksheet);
-          }
-          
-          // Extract listing IDs from the first column
-          const listingIds = jsonData
-            .map(row => row['Listing Id'] || row['ListingId'] || row['listingId'])
-            .filter(id => id)
-            .map(id => String(id));
-          
+
+          const workbook = file.name.endsWith('.csv')
+            ? XLSX.read(data as string, { type: 'string' })
+            : XLSX.read(data as ArrayBuffer, { type: 'array' });
+
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+          // Extract valid listing IDs
+          const listingIds = Array.from(
+            new Set(
+              jsonData
+                .map(row => row['Listing Id'] || row['ListingId'] || row['listingId'])
+                .filter(Boolean)
+                .map(id => String(id).trim())
+            )
+          );
+
           resolve(listingIds);
         } catch (error) {
           reject(error);
         }
       };
-      
+
       reader.onerror = () => reject(new Error('File reading failed'));
-      
-      if (file.name.endsWith('.csv')) {
-        reader.readAsText(file);
-      } else {
-        reader.readAsArrayBuffer(file);
-      }
+      file.name.endsWith('.csv') ? reader.readAsText(file) : reader.readAsArrayBuffer(file);
     });
   };
 
@@ -89,25 +82,29 @@ export const BidFilter = () => {
     }
 
     setLoading(true);
-    
+
     try {
-      // Extract listing IDs from all files
+      // Extract listing IDs from all uploaded files
       const allListingIds = await Promise.all(files.map(parseFile));
-      const listingIds = allListingIds.flat();
-      
-      // Call the API to filter bids
+      const listingIds = Array.from(new Set(allListingIds.flat()));
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/filter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ listingIds, date: filterDate }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to filter bids');
-      }
-
+      if (!response.ok) throw new Error('Failed to filter bids');
       const data = await response.json();
-      setFilteredBids(data.bids);
+
+      // Remove duplicate bids with same listingId for the same date
+      const uniqueBids = Array.from(
+        new Map(
+          (data.bids as BidData[]).map(bid => [`${bid.listingId}_${filterDate}`, bid])
+        ).values()
+      );
+
+      setFilteredBids(uniqueBids);
     } catch (error) {
       console.error('Filter error:', error);
       alert('Failed to filter bids. Please check file formats and try again.');
@@ -122,16 +119,16 @@ export const BidFilter = () => {
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           Filter Bids by Listing ID
         </h2>
-        
-        <FileUploader 
+
+        <FileUploader
           files={files}
-          processing={processing}
+          processing={loading}
           onFileChange={handleFileChange}
           onClearFiles={() => setFiles([])}
           onProcessFiles={filterBids}
           accept=".csv,.xlsx,.xls"
         />
-        
+
         <div className="mt-4">
           <TextField
             label="Report Date"
@@ -140,12 +137,10 @@ export const BidFilter = () => {
             onChange={(e) => setFilterDate(e.target.value)}
             variant="outlined"
             size="small"
-            InputLabelProps={{
-              shrink: true,
-            }}
+            InputLabelProps={{ shrink: true }}
           />
         </div>
-        
+
         <Button
           variant="contained"
           color="primary"
@@ -158,7 +153,7 @@ export const BidFilter = () => {
       </Card>
 
       {filteredBids.length > 0 && (
-        <FilterResults 
+        <FilterResults
           bids={filteredBids}
           date={filterDate}
         />

@@ -92,96 +92,87 @@ export default function Awarding() {
     }
   }, [historyDate, showSnackbar]);
 
+  // Process awarded CSV files
   const processAwardedFiles = useCallback(async () => {
-  if (files.length === 0) {
-    showSnackbar('Please select at least one awarded CSV file', 'warning');
-    return;
-  }
-
-  if (savedReports.length === 0) {
-    showSnackbar('No saved reports found. Load reports first.', 'warning');
-    return;
-  }
-
-  setProcessing(true);
-
-  try {
-    const awardedDataMap: Record<string, AwardedBid> = {};
-    for (const file of files) {
-      const awardedItems = await parseCSV(file);
-      awardedItems.forEach((item: Record<string, unknown>) => {
-        const listingId = String(item['Listing Id']);
-        awardedDataMap[listingId] = {
-          listingId,
-          oem: String(item['OEM'] || ''),
-          sku: String(item['SKU'] || ''),
-          prop65Warning: String(item['Prop65 Warning'] || ''),
-          description: String(item['Description'] || ''),
-          disposition: String(item['Disposition'] || ''),
-          quantity: Number(item['Quantity']) || 0,
-          unitAwardedPrice: Number(item['Unit Awarded Price']) || 0,
-          fileName: file.name,
-        };
-      });
+    if (files.length === 0) {
+      showSnackbar('Please select at least one awarded CSV file', 'warning');
+      return;
     }
 
-    const sourceFileData: Record<string, AwardedBid[]> = {};
-    const internalBids: AwardedBid[] = [];
-
-    // Compare saved reports with awarded data
-    savedReports.forEach(report => {
-      report.report_data.forEach(item => {
-        const awardedItem = awardedDataMap[item.listingId];
-        if (awardedItem) {
-          const sourceFile = item.fileName;
-          if (!sourceFileData[sourceFile]) sourceFileData[sourceFile] = [];
-
-          sourceFileData[sourceFile].push({
-            listingId: item.listingId,
-            oem: item.oem,
-            sku: item.sku,
-            prop65Warning: awardedItem.prop65Warning ?? '',
-            description: item.description,
-            disposition: item.disposition,
-            quantity: item.quantity,
-            unitAwardedPrice: awardedItem.unitAwardedPrice,
-            fileName: item.fileName,
-          });
-        } else {
-          // Not matched = internal
-          internalBids.push({
-            listingId: item.listingId,
-            oem: item.oem,
-            sku: item.sku,
-            prop65Warning: '',
-            description: item.description,
-            disposition: item.disposition,
-            quantity: item.quantity,
-            unitAwardedPrice: 0,
-            fileName: item.fileName,
-          });
-        }
-      });
-    });
-
-    if (internalBids.length > 0) {
-      sourceFileData['Internal'] = internalBids;
+    if (savedReports.length === 0) {
+      showSnackbar('No saved reports found. Load reports first.', 'warning');
+      return;
     }
 
-    setSourceFileReports(sourceFileData);
-
-    showSnackbar(
-      `Processed ${files.length} files. Found ${Object.keys(sourceFileData).length - 1} matched sources and ${internalBids.length} internal bids.`,
-      'success'
-    );
-  } catch (error) {
-    console.error('Processing error:', error);
-    showSnackbar('Failed to process files. Please check file formats.', 'error');
-  } finally {
-    setProcessing(false);
-  }
-}, [files, savedReports, showSnackbar]);
-
+    setProcessing(true);
+    
+    try {
+      // Process all files and create a map of awarded data
+      const awardedDataMap: Record<string, AwardedBid> = {};
+      for (const file of files) {
+        const awardedItems = await parseCSV(file);
+        awardedItems.forEach((item: Record<string, unknown>) => {
+          const listingId = String(item['Listing Id']);
+          awardedDataMap[listingId] = {
+            listingId,
+            oem: String(item['OEM'] || ''),
+            sku: String(item['SKU'] || ''),
+            prop65Warning: String(item['Prop65 Warning'] || ''),
+            description: String(item['Description'] || ''),
+            disposition: String(item['Disposition'] || ''),
+            quantity: Number(item['Quantity']) || 0,
+            unitAwardedPrice: Number(item['Unit Awarded Price']) || 0,
+            fileName: file.name
+          };
+        });
+      }
+      
+      // Create a map to group by source file
+      const sourceFileData: Record<string, AwardedBid[]> = {};
+      
+      // Process all saved reports
+      savedReports.forEach(report => {
+        report.report_data.forEach(item => {
+          const awardedItem = awardedDataMap[item.listingId];
+          
+          if (awardedItem) {
+            const sourceFile = item.fileName;
+            
+            if (!sourceFileData[sourceFile]) {
+              sourceFileData[sourceFile] = [];
+            }
+            
+            sourceFileData[sourceFile].push({
+              listingId: item.listingId,
+              oem: item.oem,
+              sku: item.sku,
+              prop65Warning: awardedItem.prop65Warning ?? '',
+              description: item.description,
+              disposition: item.disposition,
+              quantity: item.quantity,
+              unitAwardedPrice: awardedItem.unitAwardedPrice,
+              fileName: item.fileName
+            });
+          }
+        });
+      });
+      
+      setSourceFileReports(sourceFileData);
+      
+      showSnackbar(
+        `Processed ${files.length} files. Found ${Object.keys(sourceFileData).length} source files with matching bids.`,
+        'success'
+      );
+    } catch (error) {
+      console.error('Processing error:', error);
+      showSnackbar(
+        'Failed to process files. Please check file formats.',
+        'error'
+      );
+    } finally {
+      setProcessing(false);
+    }
+  }, [files, savedReports, showSnackbar]);
 
   // Generate XLSX reports for each source file
   const generateSourceFileReports = useCallback(() => {
@@ -193,7 +184,7 @@ export default function Awarding() {
     try {
       Object.entries(sourceFileReports).forEach(([sourceFile, data]) => {
         const formattedData = data.map(item => ({
-          'Listing Id': item.listingId,
+          'Listing ID': item.listingId,
           'OEM': item.oem,
           'SKU': item.sku,
           'Description': item.description,
