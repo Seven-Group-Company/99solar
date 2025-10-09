@@ -131,31 +131,33 @@ export default function Awarding() {
       const sourceFileData: Record<string, AwardedBid[]> = {};
       
       // Process all saved reports
-      savedReports.forEach(report => {
-        report.report_data.forEach(item => {
-          const awardedItem = awardedDataMap[item.listingId];
-          
-          if (awardedItem) {
-            const sourceFile = item.fileName;
-            
-            if (!sourceFileData[sourceFile]) {
-              sourceFileData[sourceFile] = [];
-            }
-            
-            sourceFileData[sourceFile].push({
-              listingId: item.listingId,
-              oem: item.oem,
-              sku: item.sku,
-              prop65Warning: awardedItem.prop65Warning ?? '',
-              description: item.description,
-              disposition: item.disposition,
-              quantity: item.quantity,
-              unitAwardedPrice: awardedItem.unitAwardedPrice,
-              fileName: item.fileName
-            });
-          }
-        });
-      });
+// Only keep bids that also exist in the uploaded awarded CSVs
+savedReports.forEach(report => {
+  // Filter only those bids whose listingId exists in the awardedDataMap
+  const filteredData = report.report_data.filter(item => awardedDataMap[item.listingId]);
+
+  filteredData.forEach(item => {
+    const awardedItem = awardedDataMap[item.listingId];
+    const sourceFile = item.fileName;
+
+    if (!sourceFileData[sourceFile]) {
+      sourceFileData[sourceFile] = [];
+    }
+
+    sourceFileData[sourceFile].push({
+      listingId: item.listingId,
+      oem: item.oem,
+      sku: item.sku,
+      prop65Warning: awardedItem.prop65Warning ?? '',
+      description: item.description,
+      disposition: item.disposition,
+      quantity: item.quantity,
+      unitAwardedPrice: awardedItem.unitAwardedPrice,
+      fileName: item.fileName
+    });
+  });
+});
+
       
       setSourceFileReports(sourceFileData);
       

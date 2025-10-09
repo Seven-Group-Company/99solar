@@ -135,7 +135,10 @@ export default function FileManagementPage() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', file.originalName.replace('.csv', '.xlsx'));
+      const lotMatch = file.originalName.match(/Lot(\d+)/i);
+      const vlotName = lotMatch ? `VLot${lotMatch[1]}.xlsx` : file.originalName.replace('.csv', '.xlsx');
+      link.setAttribute('download', vlotName);
+
       document.body.appendChild(link);
       link.click();
   
@@ -183,7 +186,9 @@ export default function FileManagementPage() {
             }
           );
           
-          const fileName = file.originalName.replace('.csv', '.xlsx');
+          const lotMatch = file.originalName.match(/Lot(\d+)/i);
+          const fileName = lotMatch ? `VLot${lotMatch[1]}.xlsx` : file.originalName.replace('.csv', '.xlsx');
+
           if (folder) {
             folder.file(fileName, response.data);
           }
@@ -332,18 +337,18 @@ export default function FileManagementPage() {
             <div className="space-y-3">
               <h3 className="font-medium">Processed Files ({processedFiles.length})</h3>
               <Button
-  variant="outline"
-  size="sm"
-  onClick={handleDownloadAll}
-  disabled={processedFiles.some(f => f.downloading)}
->
-  {processedFiles.some(f => f.downloading) ? (
-    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-  ) : (
-    <Download className="w-4 h-4 mr-2" />
-  )}
-  Download All
-</Button>
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadAll}
+                disabled={processedFiles.some(f => f.downloading)}
+              >
+                {processedFiles.some(f => f.downloading) ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                Download All
+              </Button>
               <div className="border rounded-lg divide-y dark:divide-gray-800">
                 {processedFiles.map((file, index) => (
                   <div

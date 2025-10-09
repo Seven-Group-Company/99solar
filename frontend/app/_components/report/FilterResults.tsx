@@ -32,32 +32,47 @@ export const FilterResults = ({ bids, date }: FilterResultsProps) => {
     setPage(0);
   };
 
-  const exportToCSV = () => {
-    const csvData = bids
-      .map(bid => {
-        const unitAwardedPrice =
-          typeof bid.unitPrice === 'number' && typeof bid.commissionAmount === 'number'
-            ? bid.unitPrice + bid.commissionAmount
-            : bid.unitPrice ?? null;
+  // Example: extract price from uploaded file name or external source
+function extractPriceFromFile(fileName: string): number | null {
+  // Example: if filename contains price e.g. "Lot82377_45.32.csv"
+  const match = fileName.match(/(\d+(\.\d+)?)/);
+  return match ? parseFloat(match[0]) : null;
+}
 
-        return {
-          'Listing Id': bid.listingId,
-          'OEM': bid.oem,
-          'SKU': bid.sku,
-          'Description': bid.description,
-          'Disposition': bid.disposition,
-          'Quantity': bid.quantity,
-          'Unit Awarded Price': unitAwardedPrice,
-          'File Name': bid.fileName,
-        };
-      })
-      .filter(row => row['Unit Awarded Price'] && row['Unit Awarded Price'] !== 0); // filter out 0, null, undefined
 
-    const worksheet = XLSX.utils.json_to_sheet(csvData);
-    const csv = XLSX.utils.sheet_to_csv(worksheet);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, `Filtered_Bids_${date}.csv`);
-  };
+const exportToCSV = () => {
+  const csvData = bids
+    .map(bid => {
+      // Use uploaded file price when unitPrice is 0 or null
+      const baseUnitPrice =
+        bid.unitPrice && bid.unitPrice > 0
+          ? bid.unitPrice
+          : extractPriceFromFile(bid.fileName); // fallback logic
+
+      const unitAwardedPrice =
+        typeof baseUnitPrice === 'number' && typeof bid.commissionAmount === 'number'
+          ? baseUnitPrice + bid.commissionAmount
+          : baseUnitPrice ?? null;
+
+      return {
+        'Listing Id': bid.listingId,
+        'OEM': bid.oem,
+        'SKU': bid.sku,
+        'Description': bid.description,
+        'Disposition': bid.disposition,
+        'Quantity': bid.quantity,
+        'Unit Awarded Price': unitAwardedPrice,
+        'File Name': bid.fileName,
+      };
+    })
+    .filter(row => row['Unit Awarded Price'] && row['Unit Awarded Price'] !== 0);
+
+  const worksheet = XLSX.utils.json_to_sheet(csvData);
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  saveAs(blob, `Filtered_Bids_${date}.csv`);
+};
+
 
   return (
     <Card className="p-6 shadow-lg">

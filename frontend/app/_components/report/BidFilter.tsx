@@ -29,12 +29,7 @@ export const BidFilter = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      // Avoid duplicate files by name
-      const uniqueFiles = newFiles.filter(
-        file => !files.some(f => f.name === file.name)
-      );
-      setFiles(prev => [...prev, ...uniqueFiles]);
-    }
+      setFiles(prevFiles => [...prevFiles, ...newFiles]);}
   };
 
   const parseFile = async (file: File): Promise<string[]> => {
