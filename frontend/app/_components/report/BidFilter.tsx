@@ -41,18 +41,19 @@ export const BidFilter = () => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
-      reader.onload = (e) => {
-        try {
-          const data = e.target?.result;
-          let jsonData: Record<string, unknown>[];
+reader.onload = (e) => {
+  try {
+    const data = e.target?.result;
+    let jsonData: Record<string, unknown>[]; // <-- use let
 
-          const workbook = file.name.endsWith('.csv')
-            ? XLSX.read(data as string, { type: 'string' })
-            : XLSX.read(data as ArrayBuffer, { type: 'array' });
+    const workbook = file.name.endsWith('.csv')
+      ? XLSX.read(data as string, { type: 'string' })
+      : XLSX.read(data as ArrayBuffer, { type: 'array' });
 
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    jsonData = XLSX.utils.sheet_to_json(worksheet);
+
 
           // Extract valid listing IDs
           const listingIds = Array.from(
@@ -70,8 +71,12 @@ export const BidFilter = () => {
         }
       };
 
-      reader.onerror = () => reject(new Error('File reading failed'));
-      file.name.endsWith('.csv') ? reader.readAsText(file) : reader.readAsArrayBuffer(file);
+reader.onerror = () => reject(new Error('File reading failed'));
+if (file.name.endsWith('.csv')) {
+  reader.readAsText(file);
+} else {
+  reader.readAsArrayBuffer(file);
+}
     });
   };
 
