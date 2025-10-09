@@ -174,7 +174,6 @@ export default function Awarding() {
     }
   }, [files, savedReports, showSnackbar]);
 
-  // Generate XLSX reports for each source file
   const generateSourceFileReports = useCallback(() => {
     if (Object.keys(sourceFileReports).length === 0) {
       showSnackbar('No source file data to generate reports', 'warning');
